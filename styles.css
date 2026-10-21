@@ -1,15 +1,16 @@
-/* ดีไซน์ A (สะอาด สว่าง) + สีหมวดสินค้าแบบ B · ปุ่มคิดเงินสีส้ม */
+/* ดีไซน์ A (สะอาด สว่าง) + สีหมวดสินค้าแบบ B · สีหลักชมพูตามโลโก้ Ahai SHOP */
 :root {
-  --bg: #F6F5F1;
+  --bg: #F7F5F6;
   --card: #FFFFFF;
-  --line: #E6E4DD;
-  --line2: #D3D1C7;
-  --text: #2C2C2A;
-  --text2: #5F5E5A;
-  --muted: #888780;
-  --pay: #D85A30;
-  --pay-hover: #C04E28;
-  --pay-soft: #FAECE7;
+  --line: #E9E4E7;
+  --line2: #D6CFD3;
+  --text: #2C2A2B;
+  --text2: #5F5A5D;
+  --muted: #8A8287;
+  /* ชมพูเข้มพอให้ตัวหนังสือขาวบนปุ่มอ่านชัด (คอนทราสต์ ≥ 4.5:1) */
+  --pay: #D4146F;
+  --pay-hover: #B50F5E;
+  --pay-soft: #FCE8F2;
   --ok: #0F6E56;
   --ok-soft: #E1F5EE;
   --warn: #854F0B;
@@ -288,6 +289,42 @@ small { font-size: 12px; }
 .vb i { display: block; width: 100%; background: var(--pay); border-radius: 3px 3px 0 0; min-height: 1px; }
 .vb span { font-size: 10px; color: var(--muted); height: 14px; }
 
+/* animation ------------------------------------------------------------ */
+/* 1 · พื้นหลังออโรร่าหน้าล็อกอิน (CSS ล้วน ไม่ใช้ WebGL จะได้เบาบนมือถือ) */
+.login-wrap { position: relative; overflow: hidden; isolation: isolate; }
+.aurora { position: absolute; inset: -20%; z-index: -1; filter: blur(60px); opacity: 0.75; }
+.aurora i { position: absolute; width: 55vmax; height: 55vmax; border-radius: 50%; }
+.aurora i:nth-child(1) { background: #F7A8CF; top: -10%; left: -10%; animation: drift1 16s ease-in-out infinite alternate; }
+.aurora i:nth-child(2) { background: #E35AA0; bottom: -15%; right: -10%; animation: drift2 19s ease-in-out infinite alternate; opacity: 0.6; }
+.aurora i:nth-child(3) { background: #C7B5F5; top: 30%; left: 35%; width: 40vmax; height: 40vmax; animation: drift3 22s ease-in-out infinite alternate; opacity: 0.55; }
+@keyframes drift1 { to { transform: translate(18vw, 12vh) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-16vw, -14vh) scale(1.1); } }
+@keyframes drift3 { to { transform: translate(-12vw, 10vh) scale(0.85); } }
+.login { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(6px); animation: rise 0.5s ease-out both; box-shadow: 0 10px 40px rgba(212, 20, 111, 0.12); }
+.login-logo { animation: float 4s ease-in-out infinite; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+@keyframes float { 50% { transform: translateY(-5px); } }
+/* 3 · ชื่อร้านมีแสงวิ่งผ่าน (แรงบันดาลใจจาก React Bits Shiny Text) */
+.shiny { background: linear-gradient(110deg, var(--text) 35%, #F27BB6 50%, var(--text) 65%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 3.2s linear infinite; }
+@keyframes shine { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+/* 4 · ประกายตอนแตะสินค้า */
+.spark { position: fixed; z-index: 90; width: 0; height: 0; pointer-events: none; }
+.spark i { position: absolute; left: -1px; top: -1px; width: 2px; height: 10px; border-radius: 2px; background: var(--pay); transform: rotate(var(--a)) translateY(-6px); transform-origin: 1px 1px; animation: sparkOut 0.45s ease-out forwards; }
+@keyframes sparkOut { to { transform: rotate(var(--a)) translateY(-26px) scaleY(0.2); opacity: 0; } }
+/* 5 · ตัวเลขจำนวนเด้งตอนเพิ่มสินค้า */
+.qty-badge.bump { animation: bump 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes bump { 0% { transform: scale(0.4); } 100% { transform: scale(1); } }
+.pcard { transition: transform 0.12s ease, border-color 0.15s, box-shadow 0.15s; }
+.pcard:hover { box-shadow: 0 4px 14px rgba(212, 20, 111, 0.10); }
+/* 9 · เปลี่ยนหน้าแบบเลื่อนจางเข้า */
+#main.enter > * { animation: pageIn 0.32s ease-out both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } }
+/* ปิดทุกท่าเคลื่อนไหวถ้าผู้ใช้ตั้ง "ลดการเคลื่อนไหว" ในมือถือ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .aurora { display: none; }
+}
+
 /* print */
 #print-area { display: none; }
 @media print {
@@ -324,7 +361,7 @@ small { font-size: 12px; }
   .cart-panel.sheet-open { transform: none; }
   .sheet-close { display: inline-flex; align-self: center; height: 32px; }
   #cartBar { display: block; position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 25; }
-  .cart-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: var(--pay); color: #fff; border-radius: 14px; padding: 14px 16px; font-size: 16px; box-shadow: 0 4px 14px rgba(216, 90, 48, 0.35); }
+  .cart-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: var(--pay); color: #fff; border-radius: 14px; padding: 14px 16px; font-size: 16px; box-shadow: 0 4px 14px rgba(212, 20, 111, 0.35); }
   .grid2, .grid4 { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .wrap { padding: 12px; }
   .prow { flex-wrap: wrap; }

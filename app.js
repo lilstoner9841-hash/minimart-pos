@@ -213,14 +213,29 @@
     document.body.classList.remove('menu-open');
     render();
     window.scrollTo(0, 0);
+    // เลื่อนจางเข้าเฉพาะตอนเปลี่ยนหน้า (ไม่เล่นซ้ำตอนพิมพ์ค้นหาแล้วหน้าวาดใหม่)
+    const m = $('#main');
+    m.classList.remove('enter'); void m.offsetWidth; m.classList.add('enter');
+    clearTimeout(go.t); go.t = setTimeout(() => m.classList.remove('enter'), 700);
+  }
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ประกายแตกออกจากจุดที่แตะ (แรงบันดาลใจจาก React Bits Click Spark)
+  function spark(x, y) {
+    if (reduceMotion() || x == null || (x === 0 && y === 0)) return;
+    const box = document.createElement('div');
+    box.className = 'spark'; box.style.left = x + 'px'; box.style.top = y + 'px';
+    for (let i = 0; i < 8; i++) { const s = document.createElement('i'); s.style.setProperty('--a', (i * 45) + 'deg'); box.append(s); }
+    document.body.append(box);
+    setTimeout(() => box.remove(), 500);
   }
 
   function renderLogin() {
     $('#app').innerHTML = `
       <div class="login-wrap">
+        <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
         <form class="login card" data-form="login">
           ${C.logo ? `<img class="login-logo" src="${esc(C.logo)}" alt="">` : '<div class="login-ic"><i class="ti ti-lock"></i></div>'}
-          <h1>${esc(C.shopName)}</h1>
+          <h1 class="shiny">${esc(C.shopName)}</h1>
           <div class="seg sm center">${[['lo', 'ລາວ'], ['th', 'ไทย']].map(([l, n]) => `<button type="button" class="${S.lang === l ? 'on' : ''}" data-act="lang" data-v="${l}">${n}</button>`).join('')}</div>
           <label class="field"><span>${t('username')}</span><input name="u" autocomplete="username" autocapitalize="none" required></label>
           <label class="field"><span>${t('password')}</span><input name="p" type="password" autocomplete="current-password" required></label>
@@ -273,7 +288,7 @@
       const left = p.stock - cartQty(p.id);
       const n = cartQty(p.id);
       return `<button class="pcard ${left <= 0 ? 'out' : ''}" data-act="add" data-id="${p.id}">
-        ${n ? `<span class="qty-badge">${n}</span>` : ''}
+        ${n ? `<span class="qty-badge ${S.bumpId === p.id ? 'bump' : ''}">${n}</span>` : ''}
         ${thumb(p, 'pimg')}
         <span class="pname">${esc(p.name)}</span>
         <span class="pprice">${money(p.price)}</span>
@@ -999,7 +1014,14 @@
       S.cur = el.dataset.v; render();
     },
     cat(el) { S.cat = el.dataset.v; drawPos(); },
-    add(el) { const p = prodById(el.dataset.id); if (p) addToCart(p); },
+    add(el, e) {
+      const p = prodById(el.dataset.id); if (!p) return;
+      const before = cartQty(p.id);
+      S.bumpId = p.id;
+      addToCart(p);
+      S.bumpId = null;
+      if (cartQty(p.id) > before) spark(e && e.clientX, e && e.clientY);
+    },
     qty(el) {
       const l = S.cart.find(x => x.id === el.dataset.id); if (!l) return;
       const p = prodById(l.id), d = Number(el.dataset.v);
