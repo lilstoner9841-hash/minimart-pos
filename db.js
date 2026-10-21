@@ -111,7 +111,16 @@
       async listUsers() { ownerOnly(); return d.users.map(({ password, ...u }) => u); },
       async setRole() { throw new AppError('generic', 'demo'); },
 
-      async listProducts() { authed(); return d.products.map(p => ({ ...p })); },
+      async listProducts() { authed(); return d.products.filter(p => !p.deleted_at).map(p => ({ ...p })); },
+      // ไม่เคยมีประวัติ → ลบจริง · มีประวัติแล้ว → เอาออกจากรายการ แต่บิลเก่า/รายงานยังอยู่
+      async deleteProduct(id) {
+        authed();
+        const p = prod(id); if (!p || p.deleted_at) return 'not_found';
+        const used = d.sale_items.some(i => i.product_id === id) || d.cod_items.some(i => i.product_id === id) || d.receipts.some(r => r.product_id === id);
+        if (used) { Object.assign(p, { deleted_at: nowIso(), active: false, barcode: null }); save(); return 'archived'; }
+        d.products = d.products.filter(x => x.id !== id); delete d.costs[id]; save();
+        return 'deleted';
+      },
       async listCosts() { authed(); return { ...d.costs }; },
       async saveProduct(p, cost) {
         authed();
@@ -368,7 +377,8 @@
       async listUsers() { return q(sb.from('profiles').select('id, username, display_name, role').order('username')); },
       async setRole(id, role) { await q(sb.from('profiles').update({ role }).eq('id', id)); },
 
-      async listProducts() { return all(() => sb.from('products').select('*').order('name').order('id')); },
+      async listProducts() { return all(() => sb.from('products').select('*').is('deleted_at', null).order('name').order('id')); },
+      async deleteProduct(id) { return q(sb.rpc('delete_product', { p_id: id })); },
       async listCosts() {
         const rows = await all(() => sb.from('product_costs').select('product_id, avg_cost').order('product_id'));
         return Object.fromEntries(rows.map(r => [r.product_id, Number(r.avg_cost)]));

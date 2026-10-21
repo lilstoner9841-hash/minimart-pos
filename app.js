@@ -590,7 +590,8 @@
         </div>
       </div>
       <div class="card mt"><h3>${t('allStock')}</h3>
-        <div class="table">${act.map(p => `<div class="trow">${thumb(p, 'cimg')}<span class="grow">${esc(p.name)}<small>${esc(p.category)}</small></span><b class="${p.stock <= p.min_stock ? 'warn-t' : ''}">${p.stock} ${esc(p.unit)}</b>${isOwner() ? `<span class="muted w100 r">${lak(Math.max(0, p.stock) * (S.costs[p.id] || 0))}</span>` : ''}</div>`).join('')}</div>
+        <div class="table">${S.products.map(p => `<div class="trow ${p.active === false ? 'dim' : ''}">${thumb(p, 'cimg')}<span class="grow">${esc(p.name)}${p.active === false ? ` <span class="tag">${t('hidden')}</span>` : ''}<small>${esc(p.category)}</small></span><b class="${p.active !== false && p.stock <= p.min_stock ? 'warn-t' : ''}">${p.stock} ${esc(p.unit)}</b>${isOwner() ? `<span class="muted w100 r">${lak(Math.max(0, p.stock) * (S.costs[p.id] || 0))}</span>` : ''}
+          <span class="row-acts"><button class="icon-btn" data-act="prodEdit" data-id="${p.id}" aria-label="${t('edit')}"><i class="ti ti-pencil"></i></button><button class="icon-btn danger" data-act="prodDel" data-id="${p.id}" aria-label="${t('delete')}"><i class="ti ti-trash"></i></button></span></div>`).join('') || `<p class="muted">${t('noProducts')}</p>`}</div>
       </div></div>`;
   }
 
@@ -844,7 +845,7 @@
         <label class="field"><span>${t('minStock')}</span><input name="min_stock" inputmode="numeric" value="${esc(p.min_stock)}"></label>
         <label class="check"><input type="checkbox" name="active" ${p.active !== false ? 'checked' : ''}> ${t('showOnPos')}</label>
       </div>
-      <div class="row end gap mt">${p.id ? `<button type="button" class="btn" data-act="labelFor" data-id="${p.id}"><i class="ti ti-barcode"></i> ${t('printLabel')}</button>` : ''}
+      <div class="row end gap mt">${p.id ? `<button type="button" class="btn-danger" data-act="prodDel" data-id="${p.id}"><i class="ti ti-trash"></i> ${t('delete')}</button><span class="grow"></span><button type="button" class="btn" data-act="labelFor" data-id="${p.id}"><i class="ti ti-barcode"></i> ${t('printLabel')}</button>` : ''}
         <button class="btn-pay" type="submit">${t('save')}</button></div></form>`, 'wide');
     drawBarcodePreview();
   }
@@ -1093,6 +1094,23 @@
     },
     prodNew() { prodForm(null); },
     prodEdit(el) { prodForm(prodById(el.dataset.id)); },
+    prodDel(el) {
+      const p = prodById(el.dataset.id); if (!p) return;
+      modal(`<div class="modal-head"><b><i class="ti ti-trash"></i> ${t('deleteProduct')}</b></div>
+        <div class="lrow">${thumb(p, 'cimg')}<span class="grow">${esc(p.name)}<small>${t('stockNow')}: ${p.stock} ${esc(p.unit)}${p.barcode ? ' · ' + esc(p.barcode) : ''}</small></span></div>
+        <p>${t('confirmDelProduct')}</p><p class="hint">${t('delProductNote')}</p>
+        <div class="row end gap"><button class="btn" data-act="closeModal">${t('cancel')}</button><button class="btn-danger" data-act="prodDelGo" data-id="${p.id}">${t('delete')}</button></div>`);
+    },
+    async prodDelGo(el) {
+      await withBusy(el, async () => {
+        const r = await db.deleteProduct(el.dataset.id);
+        S.cart = S.cart.filter(l => l.id !== el.dataset.id);
+        await refreshProducts();
+        closeModal();
+        toast(r === 'archived' ? t('productArchived') : t('productDeleted'), 'ok');
+        VIEWS[S.page]();
+      });
+    },
     genBarcode() { const i = $('#bcIn'); if (i && !i.value) { i.value = nextBarcode(); drawBarcodePreview(); } },
     labelFor(el) { S.labelQty = S.labelQty || {}; S.labelQty[el.dataset.id] = S.labelQty[el.dataset.id] || '1'; closeModal(); go('labels'); },
     printLabels() { printLabels(); },
@@ -1160,7 +1178,8 @@
         if (S.edit.id) row.id = S.edit.id;
         await db.saveProduct(row, E.cost.value === '' ? null : num(E.cost.value));
         await refreshProducts();
-        closeModal(); toast(t('saved'), 'ok'); viewProducts();
+        // กลับไปหน้าที่เปิดฟอร์มมา (สต็อก / สินค้า / พิมพ์บาร์โค้ด)
+        closeModal(); toast(t('saved'), 'ok'); VIEWS[S.page]();
       });
     },
     async expense(f) {
