@@ -183,6 +183,7 @@
       <div id="offline" class="offline-bar" ${navigator.onLine ? 'hidden' : ''}>${t('offline')}</div>
       <header class="top">
         <button class="icon-btn" data-act="menu" aria-label="${t('menu')}"><i class="ti ti-menu-2"></i></button>
+        ${C.logo ? `<img class="brand-logo" src="${esc(C.logo)}" alt="">` : ''}
         <div class="brand"><b>${esc(shop)}</b><small>${t(S.page)}</small></div>
         <div class="top-right">
           <button class="pill ${S.shift ? 'ok' : 'warn'}" data-act="go" data-page="shift">${S.shift ? '● ' + t('open') : t('needShift')}</button>
@@ -218,7 +219,7 @@
     $('#app').innerHTML = `
       <div class="login-wrap">
         <form class="login card" data-form="login">
-          <div class="login-ic"><i class="ti ti-lock"></i></div>
+          ${C.logo ? `<img class="login-logo" src="${esc(C.logo)}" alt="">` : '<div class="login-ic"><i class="ti ti-lock"></i></div>'}
           <h1>${esc(C.shopName)}</h1>
           <div class="seg sm center">${[['lo', 'ລາວ'], ['th', 'ไทย']].map(([l, n]) => `<button type="button" class="${S.lang === l ? 'on' : ''}" data-act="lang" data-v="${l}">${n}</button>`).join('')}</div>
           <label class="field"><span>${t('username')}</span><input name="u" autocomplete="username" autocapitalize="none" required></label>

@@ -155,6 +155,8 @@ small { font-size: 12px; }
 .login h1 { text-align: center; font-size: 22px; margin-bottom: 4px; }
 .login-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--pay-soft); color: var(--pay); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; }
 .login-ic .ti { font-size: 28px; }
+.login-logo { width: 112px; height: 112px; border-radius: 50%; object-fit: cover; margin: 0 auto 6px; display: block; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); }
+.brand-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: none; }
 .login .btn-pay { margin-top: 6px; min-height: 50px; font-size: 17px; }
 
 /* POS */
