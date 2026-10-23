@@ -110,6 +110,12 @@
       async saveSettings(s) { ownerOnly(); Object.assign(d.settings, s); save(); },
       async listUsers() { ownerOnly(); return d.users.map(({ password, ...u }) => u); },
       async setRole() { throw new AppError('generic', 'demo'); },
+      async setPassword(userId, password) {
+        ownerOnly();
+        if (String(password || '').length < 6) throw new AppError('weak_password');
+        const u = d.users.find(x => x.id === userId); if (!u) throw new AppError('generic', 'not_found');
+        u.password = password; save();
+      },
 
       async listProducts() { authed(); return d.products.filter(p => !p.deleted_at).map(p => ({ ...p })); },
       // ไม่เคยมีประวัติ → ลบจริง · มีประวัติแล้ว → เอาออกจากรายการ แต่บิลเก่า/รายงานยังอยู่
@@ -323,7 +329,7 @@
     function fail(error) {
       const m = (error && (error.message || String(error))) || '';
       if (/Failed to fetch|NetworkError|Load failed|fetch/i.test(m) && !/permission/i.test(m)) throw new AppError('network');
-      const known = m.match(/(out_of_stock|not_enough_cash|rate_not_set|no_shift|forbidden|status_locked|pick_customer|dup_barcode|need_customer|empty_cart)(?::(.*))?/);
+      const known = m.match(/(out_of_stock|not_enough_cash|rate_not_set|no_shift|forbidden|status_locked|pick_customer|dup_barcode|need_customer|empty_cart|weak_password)(?::(.*))?/);
       if (known) throw new AppError(known[1], known[2] || '');
       if (/duplicate key.*barcode/i.test(m)) throw new AppError('dup_barcode');
       if (/row-level security|permission denied/i.test(m)) throw new AppError('forbidden');
@@ -376,6 +382,7 @@
       async saveSettings(s) { await q(sb.from('settings').upsert(Object.entries(s).map(([key, value]) => ({ key, value: String(value) })))); },
       async listUsers() { return q(sb.from('profiles').select('id, username, display_name, role').order('username')); },
       async setRole(id, role) { await q(sb.from('profiles').update({ role }).eq('id', id)); },
+      async setPassword(userId, password) { await q(sb.rpc('set_user_password', { p_user: userId, p_password: password })); },
 
       async listProducts() { return all(() => sb.from('products').select('*').is('deleted_at', null).order('name').order('id')); },
       async deleteProduct(id) { return q(sb.rpc('delete_product', { p_id: id })); },

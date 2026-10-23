@@ -996,7 +996,8 @@
         <button class="btn-pay" type="submit">${t('saveSettings')}</button></form>
       <div class="card mt"><h3>${t('users')}</h3>
         ${users.map(u => `<div class="lrow"><span class="grow">${esc(u.display_name || u.username)}<small>${esc(u.username)}</small></span>
-          ${db.mode === 'live' && u.id !== S.me.id ? `<select data-role="${u.id}">${['owner', 'cashier'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t('role_' + r)}</option>`).join('')}</select>` : `<span class="tag">${t('role_' + u.role)}</span>`}</div>`).join('')}
+          ${db.mode === 'live' && u.id !== S.me.id ? `<select data-role="${u.id}" class="w-auto">${['owner', 'cashier'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t('role_' + r)}</option>`).join('')}</select>` : `<span class="tag">${t('role_' + u.role)}</span>`}
+          <button class="btn sm" data-act="pwOpen" data-id="${u.id}" data-name="${esc(u.username)}"><i class="ti ti-key"></i> ${t('resetPw')}</button></div>`).join('')}
         ${db.mode === 'live' ? `<p class="hint">${t('addUserHint', { domain: esc(C.loginDomain) })}</p>` : ''}</div>
       ${db.mode === 'demo' ? `<div class="card mt"><button class="btn-danger" data-act="resetDemo">${t('resetDemo')}</button></div>` : ''}
     </div>`;
@@ -1117,6 +1118,19 @@
     },
     prodNew() { prodForm(null); },
     prodEdit(el) { prodForm(prodById(el.dataset.id)); },
+    // เจ้าของตั้งรหัสผ่านใหม่ให้ผู้ใช้ (พนักงานลืมรหัส) · ผู้ใช้เดิมยังใช้ชื่อเดิม
+    pwOpen(el) {
+      if (!isOwner()) return;
+      modal(`<form data-form="setPw" data-id="${esc(el.dataset.id)}"><div class="modal-head"><b><i class="ti ti-key"></i> ${t('resetPw')}</b></div>
+        <div class="lrow"><span class="grow">${t('username')}<small>${esc(el.dataset.name)}</small></span></div>
+        <label class="field"><span>${t('newPw')}</span><input name="pw" type="password" autocomplete="new-password" minlength="6" required></label>
+        <label class="field"><span>${t('newPw2')}</span><input name="pw2" type="password" autocomplete="new-password" minlength="6" required></label>
+        <label class="check"><input type="checkbox" data-act="pwShow"> ${t('showPw')}</label>
+        <p class="hint">${t('pwHint')}</p>
+        <div class="row end gap"><button type="button" class="btn" data-act="closeModal">${t('cancel')}</button><button class="btn-pay" type="submit">${t('save')}</button></div></form>`);
+      $('#modal input[name=pw]').focus();
+    },
+    pwShow(el) { document.querySelectorAll('#modal input[name^=pw]').forEach(i => { i.type = el.checked ? 'text' : 'password'; }); },
     prodDel(el) {
       const p = prodById(el.dataset.id); if (!p) return;
       modal(`<div class="modal-head"><b><i class="ti ti-trash"></i> ${t('deleteProduct')}</b></div>
@@ -1142,6 +1156,15 @@
   };
 
   const FORMS = {
+    async setPw(f) {
+      const pw = f.elements.pw.value, pw2 = f.elements.pw2.value;
+      if (pw.length < 6) return toast(t('weak_password'), 'err');
+      if (pw !== pw2) return toast(t('pwMismatch'), 'err');
+      await withBusy(f.querySelector('[type=submit]'), async () => {
+        await db.setPassword(f.dataset.id, pw);
+        closeModal(); toast(t('pwChanged'), 'ok');
+      });
+    },
     async login(f) {
       const btn = f.querySelector('button[type=submit]');
       await withBusy(btn, async () => {

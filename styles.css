@@ -107,6 +107,7 @@ small { font-size: 12px; }
 .w60 { width: 60px; flex: none; }
 .w100 { width: 110px; flex: none; }
 .pad { padding: 8px; }
+.w-auto { width: auto; }
 .neg { color: var(--bad); }
 .pos-t { color: var(--ok); }
 .warn-t { color: var(--warn); }
